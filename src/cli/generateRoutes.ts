@@ -1,6 +1,7 @@
 import { FALLBACK_STRING } from '../utils/constants';
 import { getDynamicRoutes } from '../utils/getDynamicRoutes';
 import fs from 'fs';
+import { getRouteTree } from '../utils/getRouteTree';
 
 export const generateRoutes = () => {
   const routes = getDynamicRoutes();
@@ -60,13 +61,14 @@ const generateServerConfig = (serverType: string, routes: string[]) => {
 
 const writeCloudfrontConfig = (routes: string[]) => {
   const rewrites = routes.map(routeToRewrite);
+  const routeTree = getRouteTree(rewrites);
 
   const cloudFuncStr = fs.readFileSync(
     `${process.cwd()}/node_modules/next-static-utils/dist/cli/referenceCloudfrontFunc.js`,
     'utf8'
   );
   const cloudFunc = cloudFuncStr
-    .replace('[]', JSON.stringify(rewrites, null, 4))
+    .replace('ROUTE_TREE = null;', `ROUTE_TREE = ${routeTree.toString()};`)
     .replace('"use strict";', '');
 
   const pathToUpdate = `${process.cwd()}/cloudfrontFunc.js`;
